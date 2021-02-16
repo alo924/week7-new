@@ -62,15 +62,15 @@ document.addEventListener('DOMContentLoaded', async function(event) {
   // let ui = new firebaseui.auth.AuthUI(firebase.auth())
 
   // // FirebaseUI configuration
-  // let authUIConfig = {
-  //   signInOptions: [
-  //     firebase.auth.EmailAuthProvider.PROVIDER_ID
-  //   ],
-  //   signInSuccessUrl: 'todo.html'
-  // }
+   let authUIConfig = {
+     signInOptions: [
+       firebase.auth.EmailAuthProvider.PROVIDER_ID
+     ],
+     signInSuccessUrl: 'todo.html'
+   }
 
   // // Starts FirebaseUI Auth
-  // ui.start('.sign-in-or-sign-out', authUIConfig)
+   ui.start('.sign-in-or-sign-out', authUIConfig)
 })
 
 // Step 3: Hide the form when signed-out
