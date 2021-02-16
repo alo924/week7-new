@@ -1,9 +1,28 @@
 // Step 2: Change main event listener from DOMContentLoaded to 
 // firebase.auth().onAuthStateChanged and move code that 
 // shows login UI to only show when signed out
-document.addEventListener('DOMContentLoaded', async function(event) {
+// document.addEventListener('DOMContentLoaded', async function(event) {
+  firebase.auth().onAuthStateChanged (async function(user) {
   
-  let db = firebase.firestore()
+    if (user){
+    console.log('signed in')
+
+    document.querySelector('.sign-in-or-sign-out').innerHTML = `
+    <a href = "#" class = "sign-out-button text-pink-500 underline">Sign Out</a>
+    `
+      document.querySelector('.sign-out-button').addEventListener('click', function(event){
+        event.preventDefault()
+        firebase.auth().signOut()
+        document.location.href = 'todo.html'
+      })
+
+    let db = firebase.firestore()
+
+    db.collection('users').doc(user.uid).set({
+      name: user.displayName,
+      email: user.email
+    })
+
 
   document.querySelector('form').addEventListener('submit', async function(event) {
     event.preventDefault()
@@ -13,6 +32,7 @@ document.addEventListener('DOMContentLoaded', async function(event) {
     if (todoText.length > 0) {
       let docRef = await db.collection('todos').add({
         text: todoText
+        userId: user.uid
       })
 
       let todoId = docRef.id
@@ -56,10 +76,17 @@ document.addEventListener('DOMContentLoaded', async function(event) {
       await db.collection('todos').doc(todoId).delete()
     })
   }
+} else{
+  console.log('signed out')
+  
+
+// Step 3: Hide the form button when signed-out
+
+document.querySelector('form').classList.add('hidden')
 
   // Step 1: Un-comment to add FirebaseUI Auth
   // // Initializes FirebaseUI Auth
-  // let ui = new firebaseui.auth.AuthUI(firebase.auth())
+   let ui = new firebaseui.auth.AuthUI(firebase.auth())
 
   // // FirebaseUI configuration
    let authUIConfig = {
@@ -71,8 +98,7 @@ document.addEventListener('DOMContentLoaded', async function(event) {
 
   // // Starts FirebaseUI Auth
    ui.start('.sign-in-or-sign-out', authUIConfig)
+  }
 })
-
-// Step 3: Hide the form when signed-out
 // Step 4: Create a sign-out button
 // Step 5: Add user ID to newly created to-do and only show my to-dos
