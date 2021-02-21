@@ -27,7 +27,7 @@ firebase.auth().onAuthStateChanged(async function(user) {
     // Listen for the form submit and create/render the new post
     document.querySelector('form').addEventListener('submit', async function(event) {
       event.preventDefault()
-      let postUsername = document.querySelector('#username').value
+      let postUsername = user.displayName
       let postImageUrl = document.querySelector('#image-url').value
       let postNumberOfLikes = 0
       let docRef = await db.collection('posts').add({ 
@@ -48,7 +48,11 @@ firebase.auth().onAuthStateChanged(async function(user) {
       let postData = posts[i].data()
       let postUsername = postData.username
       let postImageUrl = postData.imageUrl
-      let postNumberOfLikes = postData.likes
+      // let postNumberOfLikes = postData.likes
+      let querySnapshot = await db.collection('likes')
+                          .where('postId', '==', postId)
+                          .get()
+          let postNumberOfLikes = querySnapshot.size
       renderPost(postId, postUsername, postImageUrl, postNumberOfLikes)
     }
 
@@ -95,14 +99,29 @@ async function renderPost(postId, postUsername, postImageUrl, postNumberOfLikes)
   document.querySelector(`.post-${postId} .like-button`).addEventListener('click', async function(event) {
     event.preventDefault()
     console.log(`post ${postId} like button clicked!`)
-    let existingNumberOfLikes = document.querySelector(`.post-${postId} .likes`).innerHTML
-    let newNumberOfLikes = parseInt(existingNumberOfLikes) + 1
-    document.querySelector(`.post-${postId} .likes`).innerHTML = newNumberOfLikes
-    await db.collection('posts').doc(postId).update({
-      likes: firebase.firestore.FieldValue.increment(1)
-    })
+
+    let userId = firebase.auth().currentUser.uid
+
+    let querySnapshot = await db.collection('likes')
+                                .where('postId', '==', postId)
+                                .where('userId', '==', userId)
+                                .get()
+
+    if (querySnapshot.size == 0) {
+      // only if there's not already a like with userId/postId combo
+      let existingNumberOfLikes = document.querySelector(`.post-${postId} .likes`).innerHTML
+      let newNumberOfLikes = parseInt(existingNumberOfLikes) + 1
+      document.querySelector(`.post-${postId} .likes`).innerHTML = newNumberOfLikes
+
+      // new likes document
+      await db.collection('likes').add({
+        postId: postId,
+        userId: firebase.auth().currentUser.uid
+      })
+    }
   })
 }
+
 
 // Goals: Eliminate the "username" field from the new posts form and,
 // users should only be able to "like" a post once.
@@ -110,32 +129,61 @@ async function renderPost(postId, postUsername, postImageUrl, postNumberOfLikes)
 // Method: Refactor the existing domain model (see ../images/domain-model-kelloggram.png)
 
 // Step 1: In the Firebase Console, delete the existing posts collection if one exists
-
-
-
-
-
+                     // Just delete whatever is in firebase
 
 // Step 2: Remove the username from the form, replace with the current user's name
+                    //  changed line 30 --> let postUsername = user.displayName (previously read document.query selector)
 
+// Step 3: "Liking" should add a new "likes" document in Firestore with the post ID and current user ID
+                    // lines 108-110 are the ones that control likes (Updates post collection and increments new likees)
+                    // await db.collection('posts').doc(postId).update({
+                     // likes: firebase.firestore.FieldValue.increment(1)
+                    // want to create new document in likees"collection"
 
-
-
-// Step 3: "Liking" should add a new "likes" document in Firestore with the post ID 
-//         and current user ID
-
-
-
-
-
+                    // became what is now in 113-115; this adds a document to the likes collection
+                        // await db.collection ('likes').add({
+                      // postId: postId,
+                      // userId: firebase.auth().currentUser.uid
+                    // })
+              
+                    // note: "set" is always used in conjunction with the ".doc"
 
 // Step 4: "Liking" should only be allowed once per user per post – check for an 
 //         existing "like" before adding a new "likes" document, i.e. get() the likes 
 //         collection and filter by postId and userId, and ask for the .size Tip: 
 //         you can combine .where() methods, for example:
 //         db.collection('likes').where('postId', '==', postId).where('userId', '==', userId).get()
+                  // want to prevent more than one line from being added
+                  // need to ask the database whether or not there is a like with that combination
+                  // we don't want to be able to like more than one thing
+                  // need to ask "likes" collection in Firebase to see if there is already a post ID/user ID combination
+                  // look to "Retreive a set of documeents" on firebase refeerence
+
+
+
+                  //   let userId = firebase.auth().currentUser.uid
+                 //  let querySnapshot = await db.collection('likes')
+                  //               .where('postId', '==', postId)
+                  //              .where('userId', '==', userId)
+                  //               .get()
+              
+                  // if (querySnapshot.size ==0) {
+
 // Step 5: The code to increment the number of likes in the UI when the like button 
 //         is clicked should be inside the conditional logic written in Step 4
+
+                  // this is included above
+
 // Step 6: Get the actual number of likes from Firestore for each post when the
 //         page is loaded, using a .get() with .where() conditions and asking for
 //         the .size
+
+
+                  // spot in code happens at lines 43-52 "Render all posts when page is loaded"
+                  // get all posts from post collection (line 44)
+                  // get each individual document (line 45)
+                  // looping thorugh each document (line 46-50)
+
+                  // lines 52-54: add in queerySnapshot = await db. collection ('likes) and "where" and "get"
+                  // add line 55:      let postNumberOfLikes = querySnapshot.size
+
